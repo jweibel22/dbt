@@ -166,8 +166,8 @@ def _parse_include_exclude_subdefs(
             # do not allow multiple exclude: defs at the same level
             if diff_arg is not None:
                 raise ValidationException(
-                    f'Got multiple exclusion definitions in definition list '
-                    f'{definitions}'
+                    f'You cannot provide multiple exclude arguments to the '
+                    f'same selector set operator: {definitions}'
                 )
             diff_arg = _parse_exclusions(definition)
         else:
@@ -251,10 +251,15 @@ def parse_from_definition(definition: RawDefinition) -> SelectionSpec:
         return parse_intersection_definition(definition)
     elif isinstance(definition, dict):
         return parse_dict_definition(definition)
+    elif isinstance(definition, list):
+        raise ValidationException(
+            f'Selector definition root level list not allowed. Use Union to '
+            f'contain list. {definition}'
+        )
     else:
         raise ValidationException(
-            f'Expected to find str or dict, instead found '
-            f'{type(definition)}: {definition}'
+            f'Expected to find union, intersection, str or dict, instead '
+            f'found {type(definition)}: {definition}'
         )
 
 

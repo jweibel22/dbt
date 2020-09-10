@@ -6,8 +6,11 @@ from dbt.graph import (
     SelectionCriteria,
 )
 from dbt.graph.selector_methods import MethodName
+import dbt.exceptions
 import textwrap
 import yaml
+import unittest
+from pprint import pprint
 
 from dbt.contracts.selection import SelectorFile
 
@@ -299,3 +302,64 @@ def test_parse_yaml_complex():
             ),
         ),
     ) == parsed['test_name']
+
+class SelectorUnitTest(unittest.TestCase):
+
+    def test_parse_multiple_excludes(self):
+        sf = parse_file('''\
+            selectors:
+                - name: mult_excl
+                  definition:
+                    union:
+                      - method: tag
+                        value: nightly
+                      - exclude:
+                         - method: tag
+                           value: hourly
+                      - exclude:
+                         - method: tag
+                           value: daily
+            ''')
+        with self.assertRaises(dbt.exceptions.ValidationException):
+            parsed = cli.parse_from_selectors_definition(sf)
+
+    def test_parse_set_op_plus(self):
+        sf = parse_file('''\
+            selectors:
+                - name: union_plus
+                  definition:
+                    - union:
+                       - method: tag
+                         value: nightly
+                       - exclude:
+                          - method: tag
+                            value: hourly
+                    - method: tag
+                      value: foo
+            ''')
+        with self.assertRaises(dbt.exceptions.ValidationException):
+            parsed = cli.parse_from_selectors_definition(sf)
+
+    def test_parse_multiple_methods(self):
+        sf = parse_file('''\
+            selectors:
+                - name: mult_methods
+                  definition:
+                    - tag:hourly
+                    - tag:nightly
+                    - fqn:start
+            ''')
+        with self.assertRaises(dbt.exceptions.ValidationException):
+            parsed = cli.parse_from_selectors_definition(sf)
+
+    def test_parse_multiple_methods(self):
+        sf = parse_file('''\
+            selectors:
+                - name: mult_methods
+                  definition: 'tag:hourly tag:nightly'
+            ''')
+        pprint(sf)
+        parsed = cli.parse_from_selectors_definition(sf)
+        pprint(parsed)
+
+
