@@ -84,14 +84,16 @@ class ListTask(GraphRunnableTask):
         for node in self._iterate_selected_nodes():
             selector = '.'.join(node.fqn)
             if node.resource_type == NodeType.Source:
-                yield 'source:{}'.format(selector)
+                yield f'source:{selector}'
+            elif node.resource_type == NodeType.Report:
+                yield f'report:{selector}'
             else:
                 yield selector
 
     def generate_names(self):
         for node in self._iterate_selected_nodes():
             if node.resource_type == NodeType.Source:
-                yield '{0.source_name}.{0.name}'.format(node)
+                yield f'{node.source_name}.{node.name}'
             else:
                 yield node.name
 

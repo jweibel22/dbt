@@ -46,6 +46,7 @@ class MethodName(StrEnum):
     TestType = 'test_type'
     ResourceType = 'resource_type'
     State = 'state'
+    Report = 'report'
 
 
 def is_selected_node(real_node, node_selector):
@@ -189,7 +190,7 @@ class QualifiedNameSelectorMethod(SelectorMethod):
         :param str selector: The selector or node name
         """
         qualified_name = selector.split(".")
-        parsed_nodes = list(self.non_source_nodes(included_nodes))
+        parsed_nodes = list(self.parsed_nodes(included_nodes))
         package_names = {n.package_name for _, n in parsed_nodes}
         for node, real_node in parsed_nodes:
             if self.node_is_match(
@@ -238,6 +239,15 @@ class SourceSelectorMethod(SelectorMethod):
             if target_source not in (real_node.source_name, SELECTOR_GLOB):
                 continue
             if target_table in (None, real_node.name, SELECTOR_GLOB):
+                yield node
+
+
+class ReportSelectorMethod(SelectorMethod):
+    def search(
+        self, included_nodes: Set[UniqueId], selector: str
+    ) -> Iterator[UniqueId]:
+        for node, real_node in self.report_nodes(included_nodes):
+            if real_node.name == selector:
                 yield node
 
 
@@ -469,6 +479,7 @@ class MethodManager:
         MethodName.TestName: TestNameSelectorMethod,
         MethodName.TestType: TestTypeSelectorMethod,
         MethodName.State: StateSelectorMethod,
+        MethodName.Report: ReportSelectorMethod,
     }
 
     def __init__(
